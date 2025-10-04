@@ -19,37 +19,44 @@ ExpenseTracker is a modern expense management system designed for businesses to 
 | **Member 2** | Teesha Mistry | 
 | **Member 3** | Saiji Desai |
 
-## ✨ Key Features
+## Key Features
 
-### 🔐 Authentication & Authorization
-- **Multi-role system**: Admin, Manager, Employee
-- **Google OAuth integration** for seamless login
-- **JWT-based authentication** with refresh tokens
-- **Role-based access control** (RBAC)
+### Authentication and Authorization
+- Multi-role system: Admin, Manager, Employee with specific permissions
+- Supports Google OAuth and traditional email-password login
+- JWT-based secure authentication with token refresh capability
 
-### 💰 Expense Management
-- **Smart expense submission** with category selection
-- **OCR receipt scanning** using OCR.space API
-- **Multi-currency support** with automatic country detection
-- **Expense history** with advanced filtering
+### Expense Management
+- Employee expense submission with detailed category selection
+- OCR receipt scanning integration for automatic data extraction
+- Multi-currency support based on company location
+- Expense history and filtering by date, category, status
 
-### 📊 Approval Workflows
-- **Flexible approval rules** (Sequential, Percentage-based, Specific approver)
-- **Real-time approval notifications**
-- **Manager dashboard** for team expense oversight
-- **Automated workflow routing**
+### Customizable Approval Rules
+- Sequential approval workflows where expenses pass through predefined approval steps
+- Percentage-based approval for flexible decision-making
+- Specific approver assignment for tailored workflows
+- Hybrid rules combining multiple approval strategies
+- Role- and amount-based custom rules to ensure compliance with company policies
+- Automated real-time notifications and audit logging for transparency
 
-### 📈 Analytics & Reporting
-- **Interactive dashboards** with Recharts
-- **Monthly expense trends** and category breakdowns
-- **PDF report generation** with jsPDF
-- **Data visualization** with charts and graphs
+### Real-Time Approval Process
+- Manager and Admin dashboards to view pending approvals and team expenses
+- Ability to approve or reject expenses with comments
+- Configurable escalation rules and thresholds
 
-### 🎨 Modern UI/UX
-- **Dark theme** with professional design
-- **Responsive design** for all devices
-- **Clean, intuitive interface** without cluttered elements
-- **Smooth animations** and transitions
+### Analytics and Reporting
+- Interactive charts and graphs showing monthly expense trends, category distributions, and approval status breakdowns
+- Exportable PDF reports by Admin and Manager roles, including options for summary, monthly, and category reports
+- Dashboard provides at-a-glance metrics: total expenses, pending approvals, monthly totals, and user counts
+
+### Modern UI / UX
+- Clean, dark theme for professional and comfortable user experience
+- Responsive design for desktop and mobile devices
+- Intuitive navigation with clear segmentation by user roles
+- All unnecessary text and emojis removed for clarity and professionalism
+
+---
 
 ## 🛠️ Technology Stack
 
