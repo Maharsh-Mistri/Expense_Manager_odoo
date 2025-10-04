@@ -290,26 +290,3 @@ expense-tracker/
 4. Push to branch (`git push origin feature/AmazingFeature`)
 5. Open Pull Request
 
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- [OCR.space](https://ocr.space/) for OCR API services
-- [Recharts](https://recharts.org/) for beautiful data visualization
-- [Lucide](https://lucide.dev/) for clean, consistent icons
-- [MongoDB](https://www.mongodb.com/) for flexible database solution
-
-## 📞 Support
-
-For support and questions:
-- **Project Lead**: Maharsh Mistri - maharsh.mistri@example.com
-- **Issues**: [GitHub Issues](https://github.com/your-username/expense-tracker/issues)
-- **Documentation**: [Project Wiki](https://github.com/your-username/expense-tracker/wiki)
-
----
-
-**Built with ❤️ by Team ExpenseTracker**
-
-*Making expense management simple, efficient, and transparent.*
