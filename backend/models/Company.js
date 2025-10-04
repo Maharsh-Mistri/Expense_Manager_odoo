@@ -1,4 +1,4 @@
- const mongoose = require('mongoose');
+const mongoose = require('mongoose');
 
 const companySchema = new mongoose.Schema({
   name: {
@@ -12,11 +12,7 @@ const companySchema = new mongoose.Schema({
   currency: {
     type: String,
     required: true,
-  },
-  adminUser: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true,
+    default: 'USD'
   },
   createdAt: {
     type: Date,
@@ -25,4 +21,3 @@ const companySchema = new mongoose.Schema({
 });
 
 module.exports = mongoose.model('Company', companySchema);
-

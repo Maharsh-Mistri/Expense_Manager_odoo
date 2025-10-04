@@ -4,7 +4,7 @@ const ApprovalWorkflow = require('../models/ApprovalWorkflow');
 const approvalService = require('../services/approvalService');
 const User = require('../models/User');
 
-// Get pending approvals
+// ==================== GET PENDING APPROVALS ====================
 const getPendingApprovals = async (req, res) => {
   try {
     console.log('\n=== FETCHING PENDING APPROVALS ===');
@@ -12,6 +12,7 @@ const getPendingApprovals = async (req, res) => {
     console.log('User Name:', req.user.name);
     console.log('User Role:', req.user.role);
 
+    // Find all workflows where this user is an approver with pending status
     const workflows = await ApprovalWorkflow.find({
       'approvalSteps.approver': req.user._id,
       'approvalSteps.status': 'Pending',
@@ -48,7 +49,7 @@ const getPendingApprovals = async (req, res) => {
   }
 };
 
-// Approve/Reject expense
+// ==================== PROCESS APPROVAL ====================
 const processApproval = async (req, res) => {
   try {
     const { expenseId, action, comment } = req.body;
@@ -84,7 +85,7 @@ const processApproval = async (req, res) => {
   }
 };
 
-// Create approval rule
+// ==================== CREATE APPROVAL RULE ====================
 const createApprovalRule = async (req, res) => {
   try {
     const {
@@ -94,6 +95,7 @@ const createApprovalRule = async (req, res) => {
       percentageThreshold,
       specificApprover,
       amountThreshold,
+      requireAllApprovers,
     } = req.body;
 
     console.log('\n=== CREATING APPROVAL RULE ===');
@@ -101,6 +103,7 @@ const createApprovalRule = async (req, res) => {
     console.log('Rule Type:', ruleType);
     console.log('Amount Range:', amountThreshold);
 
+    // Validate required fields
     if (!name || !ruleType || !amountThreshold) {
       return res.status(400).json({ 
         message: 'Please provide name, rule type, and amount threshold' 
@@ -125,10 +128,11 @@ const createApprovalRule = async (req, res) => {
       });
     }
 
+    // Validate based on rule type
     if (ruleType === 'percentage' || ruleType === 'hybrid') {
-      if (!percentageThreshold || percentageThreshold < 0 || percentageThreshold > 100) {
+      if (percentageThreshold === null || percentageThreshold === undefined || percentageThreshold < 0 || percentageThreshold > 100) {
         return res.status(400).json({ 
-          message: 'Percentage threshold must be between 0 and 100' 
+          message: 'Percentage threshold must be between 0 and 100 for percentage/hybrid rules' 
         });
       }
     }
@@ -136,12 +140,12 @@ const createApprovalRule = async (req, res) => {
     if (ruleType === 'specific' || ruleType === 'hybrid') {
       if (!specificApprover) {
         return res.status(400).json({ 
-          message: 'Specific approver is required for this rule type' 
+          message: 'Specific approver is required for specific/hybrid rule types' 
         });
       }
     }
 
-    if (ruleType === 'sequential' || ruleType === 'percentage') {
+    if (ruleType === 'sequential' || ruleType === 'percentage' || ruleType === 'any') {
       if (!approvers || approvers.length === 0) {
         return res.status(400).json({ 
           message: 'At least one approver is required for this rule type' 
@@ -149,22 +153,28 @@ const createApprovalRule = async (req, res) => {
       }
     }
 
-    const rule = await ApprovalRule.create({
+    // Create rule with proper defaults
+    const ruleData = {
       company: req.user.company,
       name,
       ruleType,
       approvers: approvers || [],
-      percentageThreshold: percentageThreshold || null,
-      specificApprover: specificApprover || null,
+      percentageThreshold: (ruleType === 'percentage' || ruleType === 'hybrid') ? percentageThreshold : null,
+      specificApprover: (ruleType === 'specific' || ruleType === 'hybrid') ? specificApprover : null,
       amountThreshold,
       isActive: true,
-    });
+      requireAllApprovers: requireAllApprovers || false,
+    };
+
+    console.log('Creating rule with data:', JSON.stringify(ruleData, null, 2));
+
+    const rule = await ApprovalRule.create(ruleData);
 
     const populatedRule = await ApprovalRule.findById(rule._id)
       .populate('approvers.user', 'name email role')
       .populate('specificApprover', 'name email role');
 
-    console.log('Rule Created:', populatedRule._id);
+    console.log('Rule Created Successfully:', populatedRule._id);
     console.log('=== END CREATING RULE ===\n');
 
     res.status(201).json(populatedRule);
@@ -174,7 +184,7 @@ const createApprovalRule = async (req, res) => {
   }
 };
 
-// Get approval rules (Allow all authenticated users to view)
+// ==================== GET APPROVAL RULES ====================
 const getApprovalRules = async (req, res) => {
   try {
     const rules = await ApprovalRule.find({ company: req.user.company })
@@ -190,7 +200,7 @@ const getApprovalRules = async (req, res) => {
   }
 };
 
-// Update approval rule
+// ==================== UPDATE APPROVAL RULE ====================
 const updateApprovalRule = async (req, res) => {
   try {
     const rule = await ApprovalRule.findById(req.params.id);
@@ -203,25 +213,41 @@ const updateApprovalRule = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized to update this rule' });
     }
 
-    const updatedRule = await ApprovalRule.findByIdAndUpdate(
-      req.params.id, 
-      req.body, 
-      {
-        new: true,
-        runValidators: true,
-      }
-    )
+    // Update fields
+    const {
+      name,
+      ruleType,
+      approvers,
+      percentageThreshold,
+      specificApprover,
+      amountThreshold,
+      isActive,
+      requireAllApprovers,
+    } = req.body;
+
+    if (name) rule.name = name;
+    if (ruleType) rule.ruleType = ruleType;
+    if (approvers) rule.approvers = approvers;
+    if (percentageThreshold !== undefined) rule.percentageThreshold = percentageThreshold;
+    if (specificApprover !== undefined) rule.specificApprover = specificApprover;
+    if (amountThreshold) rule.amountThreshold = amountThreshold;
+    if (isActive !== undefined) rule.isActive = isActive;
+    if (requireAllApprovers !== undefined) rule.requireAllApprovers = requireAllApprovers;
+
+    const updatedRule = await rule.save();
+
+    const populatedRule = await ApprovalRule.findById(updatedRule._id)
       .populate('approvers.user', 'name email role')
       .populate('specificApprover', 'name email role');
 
-    res.json(updatedRule);
+    res.json(populatedRule);
   } catch (error) {
     console.error('Update approval rule error:', error);
     res.status(500).json({ message: error.message });
   }
 };
 
-// Delete approval rule
+// ==================== DELETE APPROVAL RULE ====================
 const deleteApprovalRule = async (req, res) => {
   try {
     const rule = await ApprovalRule.findById(req.params.id);
@@ -235,6 +261,9 @@ const deleteApprovalRule = async (req, res) => {
     }
 
     await ApprovalRule.findByIdAndDelete(req.params.id);
+    
+    console.log('Rule deleted:', req.params.id);
+    
     res.json({ message: 'Approval rule deleted successfully' });
   } catch (error) {
     console.error('Delete approval rule error:', error);

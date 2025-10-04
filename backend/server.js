@@ -5,16 +5,14 @@ const path = require('path');
 const fs = require('fs');
 const connectDB = require('./config/db');
 const errorHandler = require('./middleware/errorHandler');
-const { multerErrorHandler } = require('./config/multer');
 
-// Load environment variables
+// Load environment variables FIRST
 dotenv.config();
 
-// Create uploads directory if it doesn't exist
+// Create uploads directory
 const uploadsDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
-  console.log('Created uploads directory');
 }
 
 // Connect to database
@@ -24,11 +22,15 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: 'http://localhost:3000',
+  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
   credentials: true
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Initialize Passport - MUST BE AFTER express middleware
+const passport = require('./config/passport');
+app.use(passport.initialize());
 
 // Serve static files
 app.use('/uploads', express.static(uploadsDir));
@@ -39,7 +41,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// Routes
+// Routes - AFTER passport initialization
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/expenses', require('./routes/expenseRoutes'));
@@ -51,14 +53,12 @@ app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'OK', 
     message: 'Server is running',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    googleOAuth: !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET)
   });
 });
 
-// Multer error handler (must be before general error handler)
-app.use(multerErrorHandler);
-
-// General error handler middleware
+// Error handler
 app.use(errorHandler);
 
 // 404 handler
@@ -68,10 +68,20 @@ app.use((req, res) => {
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Uploads directory: ${uploadsDir}`);
-  console.log(`OCR API Key configured: ${process.env.OCR_API_KEY ? 'YES' : 'NO'}`);
+const server = app.listen(PORT, () => {
+  console.log(`\n✅ Server running on port ${PORT}`);
+  console.log(`📁 Uploads directory: ${uploadsDir}`);
+  console.log(`🔐 JWT Secret: ${process.env.JWT_SECRET ? '✓' : '✗'}`);
+  console.log(`🔵 Google OAuth: ${(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) ? '✓' : '✗'}`);
+  console.log(`\n🚀 Ready to accept connections!\n`);
+});
+
+server.on('error', (error) => {
+  if (error.code === 'EADDRINUSE') {
+    console.error(`\n❌ Port ${PORT} already in use!`);
+    console.error('Run: taskkill /IM node.exe /F\n');
+    process.exit(1);
+  }
 });
 
 module.exports = app;

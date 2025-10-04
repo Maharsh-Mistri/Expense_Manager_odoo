@@ -1,4 +1,4 @@
- const mongoose = require('mongoose');
+const mongoose = require('mongoose');
 
 const approvalRuleSchema = new mongoose.Schema({
   company: {
@@ -12,7 +12,7 @@ const approvalRuleSchema = new mongoose.Schema({
   },
   ruleType: {
     type: String,
-    enum: ['sequential', 'percentage', 'specific', 'hybrid'],
+    enum: ['sequential', 'percentage', 'specific', 'hybrid', 'any'],
     required: true,
   },
   approvers: [
@@ -21,25 +21,41 @@ const approvalRuleSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
       },
-      sequence: Number,
+      sequence: {
+        type: Number,
+        default: 0,
+      },
     },
   ],
   percentageThreshold: {
     type: Number,
     min: 0,
     max: 100,
+    default: null, // Allow null for rules that don't need percentage
   },
   specificApprover: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
+    default: null,
   },
   amountThreshold: {
-    min: Number,
-    max: Number,
+    min: {
+      type: Number,
+      required: true,
+      default: 0,
+    },
+    max: {
+      type: Number,
+      required: true,
+    },
   },
   isActive: {
     type: Boolean,
     default: true,
+  },
+  requireAllApprovers: {
+    type: Boolean,
+    default: false, // If false, any approver can approve (for 'any' type)
   },
   createdAt: {
     type: Date,
@@ -48,4 +64,3 @@ const approvalRuleSchema = new mongoose.Schema({
 });
 
 module.exports = mongoose.model('ApprovalRule', approvalRuleSchema);
-
